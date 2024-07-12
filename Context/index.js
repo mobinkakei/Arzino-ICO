@@ -19,13 +19,11 @@ export const  StateContextProvider = ({children})=> {
     const [accountBalance, setAccountBalance] = useState(null);
     const [loader, setLoader] = useState(false);
     const [reCall, setReCall] = useState(0);
-    const [currency, setCurrency] = useState("MATIC");
 
     //COMPONENT
     const [openBuyToken, set0penBuyToken] = useState(false);
     const [openWidthdrawToken, setOpenWidthdrawToken] = useState(false);
     const [openTransferToken, setOpenTransferToken] = useState(false);
-    const [openTokenCreator, set0penTokenCreator] = useState(false);
     const [openCreateICO, set0penCreateIC0] = useState(false);
 
     const notifySuccess = (msg) => toast.success(msg, {duration: 200});
@@ -34,13 +32,14 @@ export const  StateContextProvider = ({children})=> {
     const checkIfWalletConnected = async () => {
         try {
             if(!window.ethereum) return notifyError("هیچ حسابی یافت نشد.");
+            await handleNetworksSwitch();
             const accounts = await window.ethereum.request({
                 method: "eth_accounts", 
             });
             
             if(accounts.length) {
                 setAddress(accounts[0]);
-                const provider = new ethers.providers.Web3Provider(connection);
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
                 const getbalance = await provider.getBalance(accounts[0]);
                 const balance = ethers.utils.formatEther(getbalance);
                 setAccountBalance(balance);
@@ -52,17 +51,21 @@ export const  StateContextProvider = ({children})=> {
            console.log(error); 
         }
     }
+    useEffect(()=> {
+        checkIfWalletConnected();
+    }, [address]);
 
     const connectWallet = async () => {
         try {
             if(!window.ethereum) return notifyError("هیچ حسابی یافت نشد.");
+            await handleNetworksSwitch();
             const accounts = await window.ethereum.request({
                 method: "eth_requestAccounts", 
             });
             
             if(accounts.length) {
                 setAddress(accounts[0]);
-                const provider = new ethers.providers.Web3Provider(connection);
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
                 const getbalance = await provider.getBalance(accounts[0]);
                 const balance = ethers.utils.formatEther(getbalance);
                 setAccountBalance(balance);
@@ -97,7 +100,7 @@ export const  StateContextProvider = ({children})=> {
                             name: token.name,
                             symbol: token.symbol,
                             supported: token.supported,
-                            price: ethers.utils.formatEther(token?.prive.toString()),
+                            price: ethers.utils.formatEther(token?.price.toString()),
                             icoSaleBal: ethers.utils.formatEther(balance.toString()),
                         }; 
                     })
@@ -133,7 +136,7 @@ export const  StateContextProvider = ({children})=> {
                             name: token.name,
                             symbol: token.symbol,
                             supported: token.supported,
-                            price: ethers.utils.formatEther(token?.prive.toString()),
+                            price: ethers.utils.formatEther(token?.price.toString()),
                             icoSaleBal: ethers.utils.formatEther(balance.toString()),
                         }; 
                     })
@@ -185,6 +188,8 @@ export const  StateContextProvider = ({children})=> {
             setLoader(true);
             notifySuccess("درحال پردازش ...");
 
+            if (!tokenQuantity || !tokenAddress) return notifyError("اطلاعات یافت نشد ...")
+
             const address = await connectWallet();
             const contract = await ICO_MARKETPLACE_CONTRACT();
 
@@ -226,7 +231,7 @@ export const  StateContextProvider = ({children})=> {
             setLoader(true);
             notifySuccess("پردازش اطلاعات ...");
             const address = await connectWallet();
-            const contract = await ICO_MARKETPLACE_CONTRACT();
+            const contract = await TOKEN_CONTRACT(transferTokenData.tokenAdd);
             const _avalableBal = await contract.balanceOf(address);
             const avalableToken = ethers.utils.formatEther(_avalableBal.toString());
 
@@ -293,7 +298,34 @@ export const  StateContextProvider = ({children})=> {
         }
     }
 
-    return <StateContext.Provider value={{}}>{children}</StateContext.Provider>;
+    return <StateContext.Provider value={{
+        widthdrawToken, 
+        transferToken, 
+        buyToken, 
+        createICOSALE, 
+        GET_ALL_USER_ICOSALE_TOKEN, 
+        GET_ALL_ICOSALE_TOKEN, 
+        connectWallet,
+        openCreateICO, 
+        set0penCreateIC0, 
+        openTransferToken, 
+        setOpenTransferToken,
+        openWidthdrawToken, 
+        setOpenWidthdrawToken,
+        openBuyToken, 
+        set0penBuyToken,
+        address, 
+        setAddress,
+        accountBalance, 
+        setAccountBalance,
+        loader, 
+        setLoader,
+        notifyError,
+        notifySuccess,
+        shortenAddress,
+        ICO_MARKETPLACE_ADDRESS 
+        }}>
+        {children}</StateContext.Provider>;
 };
 
 export const useStateContext = () => useContext(StateContext);

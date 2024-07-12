@@ -27,7 +27,7 @@ const changeNetwork = async({networkName}) => {
             method: "wallet_addEthereumChain",
             params: [
                 {
-                    ...networkName[networkName],
+                    ...networks[networkName],
                 },
             ],
         });
@@ -41,7 +41,7 @@ export const handleNetworksSwitch= async()=> {
     await changeNetwork({networkName});
 };
 
-export const shortenAddress = (address)=> `${address?.slice(0, 5)}...${address?.length -4}`;
+export const shortenAddress = (address)=> `${address?.slice(0, 5)}...${address?.slice(address.length -4)}`;
 
 // CONTRACT FETCH
 const fetchContract = (address, abi, signer) => new ethers.Contract(address, abi, signer);
